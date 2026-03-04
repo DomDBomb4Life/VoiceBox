@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Voicebox">
+<title>Voicebox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #FAF8F5;
+  --bg-warm: #F3EFE9;
+  --bg-card: #FFFFFF;
+  --text: #1A1816;
+  --text-secondary: #6B6560;
+  --text-tertiary: #9C9590;
+  --accent: #C05830;
+  --accent-soft: #C0583018;
+  --accent-hover: #A84A28;
+  --border: #E8E2DA;
+  --border-light: #F0EBE4;
+  --red: #C43030;
+  --red-soft: #C4303015;
+  --green: #2D8A4E;
+  --green-soft: #2D8A4E15;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow-sm: 0 1px 3px rgba(26,24,22,0.04), 0 1px 2px rgba(26,24,22,0.06);
+  --shadow: 0 4px 16px rgba(26,24,22,0.06), 0 1px 3px rgba(26,24,22,0.08);
+  --shadow-lg: 0 12px 40px rgba(26,24,22,0.1), 0 2px 8px rgba(26,24,22,0.06);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html, body {
+  height: 100%;
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  overflow: hidden;
+}
+
+/* ── App Shell ── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  height: 100dvh;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg);
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-brand svg {
+  width: 26px;
+  height: 26px;
+  color: var(--accent);
+}
+
+.header-brand h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+  color: var(--text);
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+.btn:active { transform: scale(0.97); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.btn-ghost:hover { background: var(--bg-warm); color: var(--text); }
+
+.btn-outline {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-outline:hover { background: var(--bg-warm); border-color: var(--text-tertiary); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent-hover); }
+
+.btn-icon {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.btn-sm {
+  padding: 7px 12px;
+  font-size: 13px;
+}
+.btn-sm svg { width: 15px; height: 15px; }
+
+/* ── Layout: Sidebar + Main ── */
+.layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 280px;
+  background: var(--bg-warm);
+  border-right: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 16px 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sidebar-header span {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-tertiary);
+}
+
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.sidebar-item:hover { background: var(--border-light); }
+.sidebar-item.active { background: var(--bg-card); box-shadow: var(--shadow-sm); }
+.sidebar-item .item-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 450;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sidebar-item .item-date {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+.sidebar-item .item-delete {
+  opacity: 0;
+  transition: opacity 0.15s;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 2px;
+}
+.sidebar-item:hover .item-delete { opacity: 1; }
+.sidebar-item .item-delete:hover { color: var(--red); }
+
+.sidebar-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ── Main Content ── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ── Recorder Section ── */
+.recorder-section {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.record-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  background: var(--bg-card);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.record-btn:hover { border-color: var(--accent); }
+.record-btn .dot {
+  width: 22px;
+  height: 22px;
+  background: var(--red);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+.record-btn.recording { border-color: var(--red); animation: pulse-border 1.5s ease infinite; }
+.record-btn.recording .dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+}
+
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196, 48, 48, 0.3); }
+  50% { box-shadow: 0 0 0 10px rgba(196, 48, 48, 0); }
+}
+
+.recorder-info {
+  flex: 1;
+  min-width: 0;
+}
+.recorder-status {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+.recorder-status.recording-active { color: var(--red); }
+.recorder-timer {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.recorder-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.recorder-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Language selector */
+.lang-select {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6560' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 26px;
+}
+
+/* ── Transcript Area ── */
+.transcript-area {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 24px;
+}
+
+.transcript-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 40px;
+  color: var(--text-tertiary);
+}
+.transcript-empty svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  opacity: 0.35;
+}
+.transcript-empty p {
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 320px;
+}
+
+.transcript-block {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s;
+}
+.transcript-block:hover { box-shadow: var(--shadow); }
+
+.transcript-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.transcript-block-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.transcript-block-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.transcript-text {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+  resize: none;
+  outline: none;
+  min-height: 60px;
+  overflow: hidden;
+}
+
+/* ── Bottom Bar ── */
+.bottom-bar {
+  padding: 12px 24px;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  background: var(--bg);
+  gap: 8px;
+}
+
+.word-count {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Settings Modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,24,22,0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-overlay.visible { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--bg-card);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: var(--shadow-lg);
+  padding: 28px;
+  transform: translateY(12px);
+  transition: transform 0.25s ease;
+}
+.modal-overlay.visible .modal { transform: translateY(0); }
+
+.modal h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  font-weight: 400;
+  margin-bottom: 20px;
+}
+
+.field {
+  margin-bottom: 18px;
+}
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-tertiary);
+  margin-bottom: 7px;
+}
+.field input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.15s;
+  outline: none;
+}
+.field input:focus { border-color: var(--accent); }
+
+.field .hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  opacity: 0;
+  transition: all 0.25s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Loading spinner ── */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Processing overlay ── */
+.processing-overlay {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: var(--accent-soft);
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ── Rename input ── */
+.rename-input {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  padding: 2px 6px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  outline: none;
+  width: 100%;
+  background: var(--bg-card);
+}
+
+/* ── Responsive: iPad & mobile ── */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    width: 300px;
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 49;
+    display: none;
+  }
+  .sidebar-backdrop.visible { display: block; }
+
+  .header { padding: 10px 16px; }
+  .recorder-section { padding: 16px; }
+  .transcript-area { padding: 16px; }
+  .bottom-bar { padding: 10px 16px; }
+
+  .menu-toggle { display: flex !important; }
+}
+
+@media (min-width: 769px) {
+  .menu-toggle { display: none !important; }
+  .sidebar-backdrop { display: none !important; }
+}
+
+/* ── Selection highlight ── */
+::selection { background: var(--accent-soft); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Header -->
+  <header class="header">
+    <div class="header-brand">
+      <button class="btn btn-ghost btn-icon menu-toggle" onclick="toggleSidebar()" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+      </svg>
+      <h1>Voicebox</h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost btn-sm" onclick="showSettings()" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        API Key
+      </button>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <div class="layout">
+    <!-- Sidebar backdrop (mobile) -->
+    <div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span>Conversations</span>
+        <button class="btn btn-ghost btn-sm" onclick="newConversation()" title="New conversation">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New
+        </button>
+      </div>
+      <div class="sidebar-list" id="sidebarList"></div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="main">
+      <!-- Recorder -->
+      <div class="recorder-section" id="recorderSection">
+        <button class="record-btn" id="recordBtn" onclick="toggleRecording()" aria-label="Record">
+          <div class="dot"></div>
+        </button>
+        <div class="recorder-info">
+          <div class="recorder-status" id="recorderStatus">Ready to record</div>
+          <div class="recorder-timer" id="recorderTimer">00:00</div>
+        </div>
+        <div class="recorder-actions">
+          <select class="lang-select" id="langSelect" title="Transcription language">
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+            <option value="fr">FR</option>
+            <option value="de">DE</option>
+            <option value="it">IT</option>
+            <option value="pt">PT</option>
+            <option value="nl">NL</option>
+            <option value="ja">JA</option>
+            <option value="ko">KO</option>
+            <option value="zh">ZH</option>
+            <option value="ru">RU</option>
+            <option value="ar">AR</option>
+            <option value="hi">HI</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Transcript area -->
+      <div class="transcript-area" id="transcriptArea">
+        <div class="transcript-empty" id="emptyState">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+          <p>Tap the record button to start capturing audio. Your speech will be transcribed and ready to copy.</p>
+        </div>
+      </div>
+
+      <!-- Bottom bar -->
+      <div class="bottom-bar" id="bottomBar">
+        <div class="word-count" id="wordCount">0 words</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="copyAllText()" id="copyAllBtn" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy All
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="clearTranscripts()" id="clearBtn" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Clear
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h2>Settings</h2>
+    <div class="field">
+      <label>OpenAI API Key</label>
+      <input type="password" id="apiKeyInput" placeholder="sk-..." autocomplete="off">
+      <div class="hint">Your key is stored locally in this browser and never sent anywhere except OpenAI's API for transcription.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="hideSettings()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──
+let conversations = {};      // { id: { name, created, transcripts: [{time, text}] } }
+let activeId = null;
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let recordStartTime = null;
+let timerInterval = null;
+let isProcessing = false;
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', () => {
+  loadConversations();
+  renderSidebar();
+
+  const keys = Object.keys(conversations);
+  if (keys.length > 0) {
+    // Select most recent
+    const sorted = keys.sort((a, b) => (conversations[b].updated || conversations[b].created) - (conversations[a].updated || conversations[a].created));
+    selectConversation(sorted[0]);
+  }
+
+  if (!getApiKey()) {
+    setTimeout(showSettings, 400);
+  }
+});
+
+// ── Storage ──
+function loadConversations() {
+  try {
+    const raw = localStorage.getItem('voicebox_conversations');
+    conversations = raw ? JSON.parse(raw) : {};
+  } catch { conversations = {}; }
+}
+
+function saveConversationsToStorage() {
+  localStorage.setItem('voicebox_conversations', JSON.stringify(conversations));
+}
+
+function getApiKey() {
+  return localStorage.getItem('voicebox_api_key') || '';
+}
+
+function setApiKey(key) {
+  localStorage.setItem('voicebox_api_key', key.trim());
+}
+
+// ── Sidebar ──
+function renderSidebar() {
+  const list = document.getElementById('sidebarList');
+
+  const keys = Object.keys(conversations);
+  if (keys.length === 0) {
+    list.innerHTML = '<div class="sidebar-empty">No conversations yet.<br>Tap "New" to get started.</div>';
+    return;
+  }
+
+  const sorted = keys.sort((a, b) => (conversations[b].updated || conversations[b].created) - (conversations[a].updated || conversations[a].created));
+
+  list.innerHTML = sorted.map(id => {
+    const c = conversations[id];
+    const isActive = id === activeId;
+    const date = new Date(c.updated || c.created);
+    const dateStr = formatDate(date);
+    const wordCount = getConversationWordCount(id);
+    return `
+      <div class="sidebar-item ${isActive ? 'active' : ''}" onclick="selectConversation('${id}')" data-id="${id}">
+        <span class="item-name">${escapeHtml(c.name)}</span>
+        <span class="item-date">${dateStr}</span>
+        <span class="item-delete" onclick="event.stopPropagation();deleteConversation('${id}')" title="Delete">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </span>
+      </div>`;
+  }).join('');
+}
+
+function formatDate(d) {
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 60000) return 'now';
+  if (diff < 3600000) return Math.floor(diff/60000) + 'm';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h';
+  if (diff < 604800000) return Math.floor(diff/86400000) + 'd';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ── Conversations ──
+function newConversation() {
+  const id = 'conv_' + Date.now();
+  const name = 'Recording ' + new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  conversations[id] = { name, created: Date.now(), updated: Date.now(), transcripts: [] };
+  saveConversationsToStorage();
+  selectConversation(id);
+  renderSidebar();
+  closeSidebarMobile();
+}
+
+function selectConversation(id) {
+  activeId = id;
+  renderSidebar();
+  renderTranscripts();
+  closeSidebarMobile();
+}
+
+function deleteConversation(id) {
+  if (!confirm('Delete this conversation?')) return;
+  delete conversations[id];
+  saveConversationsToStorage();
+  if (activeId === id) {
+    activeId = null;
+    renderTranscripts();
+  }
+  renderSidebar();
+}
+
+function renameConversation(id) {
+  const newName = prompt('Rename conversation:', conversations[id].name);
+  if (newName && newName.trim()) {
+    conversations[id].name = newName.trim();
+    saveConversationsToStorage();
+    renderSidebar();
+  }
+}
+
+// ── Transcripts ──
+function renderTranscripts() {
+  const area = document.getElementById('transcriptArea');
+  const empty = document.getElementById('emptyState');
+  const copyBtn = document.getElementById('copyAllBtn');
+  const clearBtn = document.getElementById('clearBtn');
+
+  if (!activeId || !conversations[activeId]) {
+    area.innerHTML = empty.outerHTML;
+    copyBtn.style.display = 'none';
+    clearBtn.style.display = 'none';
+    updateWordCount();
+    return;
+  }
+
+  const t = conversations[activeId].transcripts;
+  if (t.length === 0) {
+    area.innerHTML = `<div class="transcript-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+      </svg>
+      <p>Tap the record button to start capturing audio. Your speech will be transcribed and ready to copy.</p>
+    </div>`;
+    copyBtn.style.display = 'none';
+    clearBtn.style.display = 'none';
+    updateWordCount();
+    return;
+  }
+
+  copyBtn.style.display = '';
+  clearBtn.style.display = '';
+
+  let html = '';
+  if (isProcessing) {
+    html += '<div class="processing-overlay"><div class="spinner"></div>Transcribing audio…</div>';
+  }
+
+  t.forEach((entry, i) => {
+    html += `
+    <div class="transcript-block" data-index="${i}">
+      <div class="transcript-block-header">
+        <span class="transcript-block-time">${escapeHtml(entry.time)}</span>
+        <div class="transcript-block-actions">
+          <button class="btn btn-ghost btn-sm" onclick="copyBlock(${i})" title="Copy">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteBlock(${i})" title="Delete">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+      </div>
+      <textarea class="transcript-text" oninput="updateBlock(${i}, this)" rows="1">${escapeHtml(entry.text)}</textarea>
+    </div>`;
+  });
+
+  area.innerHTML = html;
+
+  // Auto-resize textareas
+  area.querySelectorAll('.transcript-text').forEach(ta => {
+    autoResize(ta);
+    ta.addEventListener('input', () => autoResize(ta));
+  });
+
+  updateWordCount();
+}
+
+function autoResize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+
+function updateBlock(index, textarea) {
+  if (!activeId) return;
+  conversations[activeId].transcripts[index].text = textarea.value;
+  conversations[activeId].updated = Date.now();
+  saveConversationsToStorage();
+  updateWordCount();
+}
+
+function deleteBlock(index) {
+  if (!activeId) return;
+  conversations[activeId].transcripts.splice(index, 1);
+  conversations[activeId].updated = Date.now();
+  saveConversationsToStorage();
+  renderTranscripts();
+}
+
+function copyBlock(index) {
+  if (!activeId) return;
+  const text = conversations[activeId].transcripts[index].text;
+  copyToClipboard(text);
+}
+
+function copyAllText() {
+  if (!activeId) return;
+  const all = conversations[activeId].transcripts.map(t => t.text).join('\n\n');
+  copyToClipboard(all);
+}
+
+function clearTranscripts() {
+  if (!activeId) return;
+  if (!confirm('Clear all transcripts in this conversation?')) return;
+  conversations[activeId].transcripts = [];
+  conversations[activeId].updated = Date.now();
+  saveConversationsToStorage();
+  renderTranscripts();
+}
+
+function getConversationWordCount(id) {
+  if (!conversations[id]) return 0;
+  return conversations[id].transcripts.reduce((sum, t) => sum + t.text.split(/\s+/).filter(Boolean).length, 0);
+}
+
+function updateWordCount() {
+  const el = document.getElementById('wordCount');
+  if (!activeId || !conversations[activeId]) { el.textContent = '0 words'; return; }
+  const count = getConversationWordCount(activeId);
+  el.textContent = `${count.toLocaleString()} word${count !== 1 ? 's' : ''}`;
+}
+
+// ── Recording ──
+async function toggleRecording() {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording() {
+  if (!getApiKey()) {
+    showSettings();
+    toast('Please add your OpenAI API key first');
+    return;
+  }
+
+  // Auto-create conversation if none selected
+  if (!activeId) {
+    newConversation();
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    // Detect supported mimeType
+    let mimeType = 'audio/webm;codecs=opus';
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = 'audio/mp4';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'audio/wav';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = ''; // let browser decide
+        }
+      }
+    }
+
+    const options = mimeType ? { mimeType } : {};
+    mediaRecorder = new MediaRecorder(stream, options);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      if (audioChunks.length > 0) {
+        const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+        await transcribeAudio(blob);
+      }
+    };
+
+    mediaRecorder.start(1000); // Collect data every second
+    isRecording = true;
+    recordStartTime = Date.now();
+
+    document.getElementById('recordBtn').classList.add('recording');
+    document.getElementById('recorderStatus').textContent = 'Recording…';
+    document.getElementById('recorderStatus').classList.add('recording-active');
+
+    timerInterval = setInterval(updateTimer, 200);
+
+  } catch (err) {
+    console.error('Microphone access error:', err);
+    toast('Could not access microphone. Please allow microphone permissions.');
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+  isRecording = false;
+  clearInterval(timerInterval);
+
+  document.getElementById('recordBtn').classList.remove('recording');
+  document.getElementById('recorderStatus').textContent = 'Ready to record';
+  document.getElementById('recorderStatus').classList.remove('recording-active');
+  document.getElementById('recorderTimer').textContent = '00:00';
+}
+
+function updateTimer() {
+  if (!recordStartTime) return;
+  const elapsed = Math.floor((Date.now() - recordStartTime) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  document.getElementById('recorderTimer').textContent = `${m}:${s}`;
+}
+
+// ── Transcription ──
+async function transcribeAudio(blob) {
+  isProcessing = true;
+  renderTranscripts();
+
+  const apiKey = getApiKey();
+  const lang = document.getElementById('langSelect').value;
+
+  // Determine file extension from mime type
+  let ext = 'webm';
+  if (blob.type.includes('mp4')) ext = 'mp4';
+  else if (blob.type.includes('wav')) ext = 'wav';
+  else if (blob.type.includes('ogg')) ext = 'ogg';
+
+  const formData = new FormData();
+  formData.append('file', blob, `recording.${ext}`);
+  formData.append('model', 'whisper-1');
+  formData.append('language', lang);
+  formData.append('response_format', 'text');
+
+  try {
+    const resp = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+      body: formData
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      console.error('Whisper API error:', err);
+      if (resp.status === 401) {
+        toast('Invalid API key. Check your settings.');
+      } else {
+        toast('Transcription failed. Check console for details.');
+      }
+      isProcessing = false;
+      renderTranscripts();
+      return;
+    }
+
+    const text = (await resp.text()).trim();
+    if (text && activeId) {
+      const time = new Date().toLocaleString('en-US', {
+        month: 'short', day: 'numeric',
+        hour: 'numeric', minute: '2-digit', second: '2-digit'
+      });
+      conversations[activeId].transcripts.push({ time, text });
+      conversations[activeId].updated = Date.now();
+      saveConversationsToStorage();
+      renderSidebar();
+    }
+
+  } catch (err) {
+    console.error('Network error:', err);
+    toast('Network error. Check your connection.');
+  }
+
+  isProcessing = false;
+  renderTranscripts();
+
+  // Scroll to bottom
+  const area = document.getElementById('transcriptArea');
+  area.scrollTop = area.scrollHeight;
+}
+
+// ── Settings ──
+function showSettings() {
+  document.getElementById('apiKeyInput').value = getApiKey();
+  document.getElementById('settingsModal').classList.add('visible');
+}
+
+function hideSettings() {
+  document.getElementById('settingsModal').classList.remove('visible');
+}
+
+function saveSettings() {
+  const key = document.getElementById('apiKeyInput').value;
+  setApiKey(key);
+  hideSettings();
+  toast(key ? 'API key saved' : 'API key cleared');
+}
+
+// Close settings on backdrop click
+document.getElementById('settingsModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('settingsModal')) hideSettings();
+});
+
+// ── Sidebar mobile ──
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.querySelector('.sidebar-backdrop').classList.toggle('visible');
+}
+function closeSidebarMobile() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.querySelector('.sidebar-backdrop').classList.remove('visible');
+}
+
+// ── Clipboard ──
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Copied to clipboard');
+  } catch {
+    // Fallback for iPad
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('Copied to clipboard');
+  }
+}
+
+// ── Toast ──
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Helpers ──
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// Keyboard shortcut: Space to toggle recording when not focused on input
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') {
+    e.preventDefault();
+    toggleRecording();
+  }
+});
+</script>
+</body>
+</html>
