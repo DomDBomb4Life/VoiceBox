@@ -7,33 +7,61 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Voicebox">
 <title>Voicebox</title>
+
+<!-- =====================================================================
+     VOICEBOX — Voice-to-text recorder for LLM workflows
+     =====================================================================
+     Single-file web app. No build step. Host on GitHub Pages or any
+     static server. Requires an OpenAI API key for Whisper transcription.
+
+     DATA MODEL:
+       groups:        { [groupId]: { name, created } }
+       conversations: { [convId]:  { name, created, updated, groupId, transcripts: [{time, text}] } }
+       openGroupId:   The single group whose children are visible (accordion)
+
+     RULES:
+       - Every conversation belongs to exactly one group.
+       - Only one group can be open at a time.
+       - New conversations are added to the currently open group.
+       - First launch creates one default group with one conversation.
+     ===================================================================== -->
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
 <style>
+/* ===================================================================
+   RESET & DESIGN TOKENS
+   =================================================================== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #FAF8F5;
-  --bg-warm: #F3EFE9;
-  --bg-card: #FFFFFF;
-  --text: #1A1816;
+  /* Palette */
+  --bg:             #FAF8F5;
+  --bg-warm:        #F3EFE9;
+  --bg-card:        #FFFFFF;
+  --text:           #1A1816;
   --text-secondary: #6B6560;
-  --text-tertiary: #9C9590;
-  --accent: #C05830;
-  --accent-soft: #C0583018;
-  --accent-hover: #A84A28;
-  --border: #E8E2DA;
-  --border-light: #F0EBE4;
-  --red: #C43030;
-  --red-soft: #C4303015;
-  --green: #2D8A4E;
-  --green-soft: #2D8A4E15;
-  --radius: 14px;
+  --text-tertiary:  #9C9590;
+  --accent:         #C05830;
+  --accent-soft:    #C0583018;
+  --accent-hover:   #A84A28;
+  --border:         #E8E2DA;
+  --border-light:   #F0EBE4;
+  --red:            #C43030;
+  --red-soft:       #C4303015;
+
+  /* Shape */
+  --radius:    14px;
   --radius-sm: 10px;
+
+  /* Elevation */
   --shadow-sm: 0 1px 3px rgba(26,24,22,0.04), 0 1px 2px rgba(26,24,22,0.06);
-  --shadow: 0 4px 16px rgba(26,24,22,0.06), 0 1px 3px rgba(26,24,22,0.08);
+  --shadow:    0 4px 16px rgba(26,24,22,0.06), 0 1px 3px rgba(26,24,22,0.08);
   --shadow-lg: 0 12px 40px rgba(26,24,22,0.1), 0 2px 8px rgba(26,24,22,0.06);
-  --safe-top: env(safe-area-inset-top, 0px);
+
+  /* Safe areas (notch / home indicator) */
+  --safe-top:    env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -47,17 +75,22 @@ html, body {
   overflow: hidden;
 }
 
-/* ── App Shell ── */
+
+/* ===================================================================
+   APP SHELL
+   =================================================================== */
 #app {
   display: flex;
   flex-direction: column;
-  height: 100%;
   height: 100dvh;
   padding-top: var(--safe-top);
   padding-bottom: var(--safe-bottom);
 }
 
-/* ── Header ── */
+
+/* ===================================================================
+   HEADER
+   =================================================================== */
 .header {
   display: flex;
   align-items: center;
@@ -86,7 +119,6 @@ html, body {
   font-size: 22px;
   font-weight: 400;
   letter-spacing: -0.3px;
-  color: var(--text);
 }
 
 .header-actions {
@@ -95,7 +127,10 @@ html, body {
   align-items: center;
 }
 
-/* ── Buttons ── */
+
+/* ===================================================================
+   BUTTONS
+   =================================================================== */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -112,49 +147,44 @@ html, body {
   -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
 }
-.btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+.btn svg   { width: 18px; height: 18px; flex-shrink: 0; }
 .btn:active { transform: scale(0.97); }
 
-.btn-ghost {
-  background: transparent;
-  color: var(--text-secondary);
-}
+/* Variants */
+.btn-ghost   { background: transparent; color: var(--text-secondary); }
 .btn-ghost:hover { background: var(--bg-warm); color: var(--text); }
 
-.btn-outline {
-  background: var(--bg-card);
-  color: var(--text);
-  border: 1px solid var(--border);
-}
+.btn-outline { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); }
 .btn-outline:hover { background: var(--bg-warm); border-color: var(--text-tertiary); }
 
-.btn-primary {
-  background: var(--accent);
-  color: #fff;
-}
+.btn-primary { background: var(--accent); color: #fff; }
 .btn-primary:hover { background: var(--accent-hover); }
 
-.btn-icon {
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  border-radius: 50%;
-}
+.btn-danger  { background: var(--red-soft); color: var(--red); }
+.btn-danger:hover { background: var(--red); color: #fff; }
 
-.btn-sm {
-  padding: 7px 12px;
-  font-size: 13px;
-}
+/* Sizes */
+.btn-icon { width: 42px; height: 42px; padding: 0; border-radius: 50%; }
+.btn-sm   { padding: 7px 12px; font-size: 13px; }
 .btn-sm svg { width: 15px; height: 15px; }
+.btn-xs   { padding: 5px 8px; font-size: 12px; }
+.btn-xs svg { width: 14px; height: 14px; }
 
-/* ── Layout: Sidebar + Main ── */
+
+/* ===================================================================
+   LAYOUT — Sidebar + Main split
+   =================================================================== */
 .layout {
   display: flex;
   flex: 1;
   overflow: hidden;
 }
 
-/* ── Sidebar ── */
+
+/* ===================================================================
+   SIDEBAR
+   =================================================================== */
 .sidebar {
   width: 280px;
   background: var(--bg-warm);
@@ -165,39 +195,134 @@ html, body {
   overflow: hidden;
 }
 
+/* -- Sidebar header with action buttons -- */
 .sidebar-header {
-  padding: 16px 16px 12px;
+  padding: 14px 12px 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 6px;
 }
+
 .sidebar-header span {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: var(--text-tertiary);
 }
 
+.sidebar-header-actions {
+  display: flex;
+  gap: 2px;
+}
+
+/* -- Scrollable group/conversation list -- */
 .sidebar-list {
   flex: 1;
   overflow-y: auto;
-  padding: 0 8px 16px;
+  padding: 0 6px 16px;
   -webkit-overflow-scrolling: touch;
 }
 
+/* -- Group header row -- */
+.sidebar-group {
+  margin-bottom: 2px;
+}
+
+.sidebar-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.12s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sidebar-group-header:hover {
+  background: var(--border-light);
+}
+
+/* Highlight the open (active) group */
+.sidebar-group-header.active-group {
+  background: var(--accent-soft);
+}
+
+.sidebar-group-header .chevron {
+  width: 14px;
+  height: 14px;
+  color: var(--text-tertiary);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  transform: rotate(0deg);          /* collapsed: points right */
+}
+
+.sidebar-group-header .chevron.open {
+  transform: rotate(90deg);         /* open: points down */
+}
+
+.sidebar-group-header .group-name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-group-header .group-count {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--border);
+  padding: 1px 6px;
+  border-radius: 100px;
+  flex-shrink: 0;
+}
+
+.sidebar-group-header .group-delete {
+  opacity: 0;
+  transition: opacity 0.12s;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.sidebar-group-header:hover .group-delete { opacity: 1; }
+.sidebar-group-header .group-delete:hover { color: var(--red); }
+
+/* -- Group children (accordion) -- */
+.sidebar-group-children {
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+.sidebar-group-children.collapsed {
+  max-height: 0 !important;
+}
+
+/* -- Conversation item inside a group -- */
 .sidebar-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 11px 12px;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-left: 10px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background 0.12s;
   -webkit-tap-highlight-color: transparent;
 }
+
 .sidebar-item:hover { background: var(--border-light); }
 .sidebar-item.active { background: var(--bg-card); box-shadow: var(--shadow-sm); }
+
 .sidebar-item .item-name {
   flex: 1;
   font-size: 14px;
@@ -205,21 +330,114 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
+
 .sidebar-item .item-date {
   font-size: 11px;
   color: var(--text-tertiary);
   flex-shrink: 0;
 }
+
 .sidebar-item .item-delete {
   opacity: 0;
   transition: opacity 0.15s;
   color: var(--text-tertiary);
   cursor: pointer;
   padding: 2px;
+  flex-shrink: 0;
 }
+
 .sidebar-item:hover .item-delete { opacity: 1; }
 .sidebar-item .item-delete:hover { color: var(--red); }
+
+/* -- Manage-mode checkbox overlay -- */
+.sidebar-item .item-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+}
+
+.sidebar-item .item-checkbox.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.sidebar-item .item-checkbox svg { width: 12px; height: 12px; color: #fff; }
+
+/* Manage mode toggles */
+.manage-mode .sidebar-item .item-checkbox { display: flex; }
+.manage-mode .sidebar-item .item-date { display: none; }
+.manage-mode .sidebar-item .item-delete { display: none; }
+
+/* -- Manage toolbar (bottom of sidebar) -- */
+.manage-toolbar {
+  padding: 8px;
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-warm);
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.manage-toolbar.visible { display: flex; }
+
+.manage-toolbar-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.manage-toolbar select {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.manage-toolbar .sel-count {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  padding: 0 4px;
+}
+
+/* -- Inline rename inputs -- */
+.rename-input {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  padding: 1px 5px;
+  border: 1.5px solid var(--accent);
+  border-radius: 4px;
+  outline: none;
+  width: 100%;
+  background: var(--bg-card);
+}
+
+.rename-input-group {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1px 5px;
+  border: 1.5px solid var(--accent);
+  border-radius: 4px;
+  outline: none;
+  width: 100%;
+  background: var(--bg-card);
+}
 
 .sidebar-empty {
   padding: 32px 16px;
@@ -229,7 +447,10 @@ html, body {
   line-height: 1.6;
 }
 
-/* ── Main Content ── */
+
+/* ===================================================================
+   MAIN CONTENT AREA
+   =================================================================== */
 .main {
   flex: 1;
   display: flex;
@@ -238,7 +459,10 @@ html, body {
   min-width: 0;
 }
 
-/* ── Recorder Section ── */
+
+/* ===================================================================
+   RECORDER
+   =================================================================== */
 .recorder-section {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-light);
@@ -262,7 +486,9 @@ html, body {
   flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
 }
+
 .record-btn:hover { border-color: var(--accent); }
+
 .record-btn .dot {
   width: 22px;
   height: 22px;
@@ -270,7 +496,12 @@ html, body {
   border-radius: 50%;
   transition: all 0.2s ease;
 }
-.record-btn.recording { border-color: var(--red); animation: pulse-border 1.5s ease infinite; }
+
+.record-btn.recording {
+  border-color: var(--red);
+  animation: pulse-border 1.5s ease infinite;
+}
+
 .record-btn.recording .dot {
   width: 18px;
   height: 18px;
@@ -278,37 +509,26 @@ html, body {
 }
 
 @keyframes pulse-border {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(196, 48, 48, 0.3); }
-  50% { box-shadow: 0 0 0 10px rgba(196, 48, 48, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196,48,48,0.3); }
+  50%      { box-shadow: 0 0 0 10px rgba(196,48,48,0); }
 }
 
-.recorder-info {
-  flex: 1;
-  min-width: 0;
-}
+.recorder-info { flex: 1; min-width: 0; }
+
 .recorder-status {
   font-size: 15px;
   font-weight: 500;
   margin-bottom: 3px;
 }
+
 .recorder-status.recording-active { color: var(--red); }
+
 .recorder-timer {
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
   color: var(--text-tertiary);
 }
-.recorder-sub {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  margin-top: 2px;
-}
 
-.recorder-actions {
-  display: flex;
-  gap: 8px;
-}
-
-/* Language selector */
 .lang-select {
   padding: 7px 10px;
   border: 1px solid var(--border);
@@ -320,13 +540,16 @@ html, body {
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6560' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6560' stroke-width='2' stroke-linecap='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;
   padding-right: 26px;
 }
 
-/* ── Transcript Area ── */
+
+/* ===================================================================
+   TRANSCRIPT DISPLAY
+   =================================================================== */
 .transcript-area {
   flex: 1;
   overflow-y: auto;
@@ -334,6 +557,7 @@ html, body {
   padding: 20px 24px;
 }
 
+/* Empty state placeholder */
 .transcript-empty {
   display: flex;
   flex-direction: column;
@@ -344,61 +568,116 @@ html, body {
   padding: 40px;
   color: var(--text-tertiary);
 }
-.transcript-empty svg {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 16px;
-  opacity: 0.35;
-}
-.transcript-empty p {
-  font-size: 15px;
-  line-height: 1.6;
-  max-width: 320px;
-}
 
+.transcript-empty svg { width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.35; }
+.transcript-empty p   { font-size: 15px; line-height: 1.6; max-width: 320px; }
+
+/* Individual transcript card (collapsed by default) */
 .transcript-block {
-  position: relative;
   background: var(--bg-card);
   border: 1px solid var(--border-light);
   border-radius: var(--radius);
-  padding: 16px 18px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.15s;
+  overflow: hidden;
 }
+
 .transcript-block:hover { box-shadow: var(--shadow); }
 
+/* Clickable header row — always visible */
 .transcript-block-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
+  padding: 12px 14px;
+  gap: 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
+
+.transcript-block-expand {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  transition: transform 0.2s ease;
+}
+
+.transcript-block-expand.expanded { transform: rotate(90deg); }
+
+.transcript-block-preview {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .transcript-block-time {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-tertiary);
+  flex-shrink: 0;
 }
+
 .transcript-block-actions {
   display: flex;
-  gap: 4px;
+  gap: 2px;
+  flex-shrink: 0;
 }
+
+/* Expandable body containing the editable textarea */
+.transcript-block-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.transcript-block-body.expanded { max-height: 8000px; }
+
+.transcript-block-body-inner { padding: 0 14px 14px; }
 
 .transcript-text {
   width: 100%;
-  border: none;
-  background: transparent;
+  border: 1px solid var(--border-light);
+  background: var(--bg);
   font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
+  font-size: 14.5px;
   line-height: 1.7;
   color: var(--text);
   resize: none;
   outline: none;
-  min-height: 60px;
+  min-height: 80px;
   overflow: hidden;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  transition: border-color 0.15s;
 }
 
-/* ── Bottom Bar ── */
+.transcript-text:focus { border-color: var(--accent); }
+
+/* Processing indicator */
+.processing-overlay {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: var(--accent-soft);
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+
+/* ===================================================================
+   BOTTOM BAR
+   =================================================================== */
 .bottom-bar {
   padding: 12px 24px;
   border-top: 1px solid var(--border-light);
@@ -416,7 +695,10 @@ html, body {
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* ── Settings Modal ── */
+
+/* ===================================================================
+   MODAL (Settings)
+   =================================================================== */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -432,6 +714,7 @@ html, body {
   pointer-events: none;
   transition: opacity 0.2s;
 }
+
 .modal-overlay.visible { opacity: 1; pointer-events: all; }
 
 .modal {
@@ -444,6 +727,7 @@ html, body {
   transform: translateY(12px);
   transition: transform 0.25s ease;
 }
+
 .modal-overlay.visible .modal { transform: translateY(0); }
 
 .modal h2 {
@@ -453,9 +737,8 @@ html, body {
   margin-bottom: 20px;
 }
 
-.field {
-  margin-bottom: 18px;
-}
+.field { margin-bottom: 18px; }
+
 .field label {
   display: block;
   font-size: 12px;
@@ -465,6 +748,7 @@ html, body {
   color: var(--text-tertiary);
   margin-bottom: 7px;
 }
+
 .field input {
   width: 100%;
   padding: 11px 14px;
@@ -477,23 +761,15 @@ html, body {
   transition: border-color 0.15s;
   outline: none;
 }
+
 .field input:focus { border-color: var(--accent); }
+.field .hint { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; line-height: 1.5; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
 
-.field .hint {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  margin-top: 6px;
-  line-height: 1.5;
-}
 
-.modal-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 24px;
-}
-
-/* ── Toast ── */
+/* ===================================================================
+   TOAST NOTIFICATION
+   =================================================================== */
 .toast {
   position: fixed;
   bottom: 80px;
@@ -512,9 +788,13 @@ html, body {
   pointer-events: none;
   white-space: nowrap;
 }
+
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ── Loading spinner ── */
+
+/* ===================================================================
+   SPINNER
+   =================================================================== */
 .spinner {
   width: 18px;
   height: 18px;
@@ -523,35 +803,13 @@ html, body {
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Processing overlay ── */
-.processing-overlay {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 18px;
-  background: var(--accent-soft);
-  border-radius: var(--radius-sm);
-  margin-bottom: 12px;
-  font-size: 13px;
-  color: var(--accent);
-  font-weight: 500;
-}
 
-/* ── Rename input ── */
-.rename-input {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  padding: 2px 6px;
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  outline: none;
-  width: 100%;
-  background: var(--bg-card);
-}
-
-/* ── Responsive: iPad & mobile ── */
+/* ===================================================================
+   RESPONSIVE — Mobile / iPad sidebar overlay
+   =================================================================== */
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
@@ -562,6 +820,7 @@ html, body {
     width: 300px;
     box-shadow: var(--shadow-lg);
   }
+
   .sidebar.open { transform: translateX(0); }
 
   .sidebar-backdrop {
@@ -571,26 +830,28 @@ html, body {
     z-index: 49;
     display: none;
   }
+
   .sidebar-backdrop.visible { display: block; }
 
-  .header { padding: 10px 16px; }
+  .header           { padding: 10px 16px; }
   .recorder-section { padding: 16px; }
-  .transcript-area { padding: 16px; }
-  .bottom-bar { padding: 10px 16px; }
-
-  .menu-toggle { display: flex !important; }
+  .transcript-area  { padding: 16px; }
+  .bottom-bar       { padding: 10px 16px; }
+  .menu-toggle      { display: flex !important; }
 }
 
 @media (min-width: 769px) {
-  .menu-toggle { display: none !important; }
-  .sidebar-backdrop { display: none !important; }
+  .menu-toggle       { display: none !important; }
+  .sidebar-backdrop  { display: none !important; }
 }
 
-/* ── Selection highlight ── */
+
+/* ===================================================================
+   MISC
+   =================================================================== */
 ::selection { background: var(--accent-soft); }
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar       { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
@@ -598,13 +859,23 @@ html, body {
 </head>
 <body>
 
+<!-- =================================================================
+     HTML STRUCTURE
+     ================================================================= -->
 <div id="app">
-  <!-- Header -->
+
+  <!-- ── Header ── -->
   <header class="header">
     <div class="header-brand">
+      <!-- Hamburger menu (mobile only) -->
       <button class="btn btn-ghost btn-icon menu-toggle" onclick="toggleSidebar()" aria-label="Menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
       </button>
+      <!-- Logo -->
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
         <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -613,35 +884,77 @@ html, body {
       <h1>Voicebox</h1>
     </div>
     <div class="header-actions">
-      <button class="btn btn-ghost btn-sm" onclick="showSettings()" aria-label="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <button class="btn btn-ghost btn-sm" onclick="showSettings()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
         API Key
       </button>
     </div>
   </header>
 
-  <!-- Layout -->
+  <!-- ── Layout: Sidebar + Main ── -->
   <div class="layout">
-    <!-- Sidebar backdrop (mobile) -->
+
+    <!-- Mobile backdrop -->
     <div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <span>Conversations</span>
-        <button class="btn btn-ghost btn-sm" onclick="newConversation()" title="New conversation">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          New
-        </button>
+        <div class="sidebar-header-actions">
+          <!-- Manage mode toggle (pencil) -->
+          <button class="btn btn-ghost btn-xs" onclick="toggleManageMode()" id="manageBtn" title="Manage conversations">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+          </button>
+          <!-- New group (folder) -->
+          <button class="btn btn-ghost btn-xs" onclick="createGroup()" title="New group">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+          </button>
+          <!-- New conversation (plus) — goes into open group -->
+          <button class="btn btn-ghost btn-xs" onclick="newConversation()" title="New conversation in open group">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+        </div>
       </div>
+
+      <!-- Group & conversation list -->
       <div class="sidebar-list" id="sidebarList"></div>
+
+      <!-- Manage mode toolbar -->
+      <div class="manage-toolbar" id="manageToolbar">
+        <div class="manage-toolbar-row">
+          <span class="sel-count" id="selCount">0 selected</span>
+          <div style="flex:1"></div>
+          <button class="btn btn-ghost btn-xs" onclick="selectAllConversations()">All</button>
+          <button class="btn btn-ghost btn-xs" onclick="clearSelection()">None</button>
+        </div>
+        <div class="manage-toolbar-row">
+          <select id="moveTarget"><option value="">Move to…</option></select>
+          <button class="btn btn-primary btn-sm" onclick="moveSelected()" style="flex-shrink:0">Move</button>
+        </div>
+        <div class="manage-toolbar-row">
+          <button class="btn btn-danger btn-sm" onclick="deleteSelected()" style="flex:1">Delete selected</button>
+        </div>
+      </div>
     </aside>
 
     <!-- Main content -->
     <div class="main">
-      <!-- Recorder -->
-      <div class="recorder-section" id="recorderSection">
-        <button class="record-btn" id="recordBtn" onclick="toggleRecording()" aria-label="Record">
+
+      <!-- Recorder controls -->
+      <div class="recorder-section">
+        <button class="record-btn" id="recordBtn" onclick="toggleRecording()">
           <div class="dot"></div>
         </button>
         <div class="recorder-info">
@@ -649,62 +962,54 @@ html, body {
           <div class="recorder-timer" id="recorderTimer">00:00</div>
         </div>
         <div class="recorder-actions">
-          <select class="lang-select" id="langSelect" title="Transcription language">
-            <option value="en">EN</option>
-            <option value="es">ES</option>
-            <option value="fr">FR</option>
-            <option value="de">DE</option>
-            <option value="it">IT</option>
-            <option value="pt">PT</option>
-            <option value="nl">NL</option>
-            <option value="ja">JA</option>
-            <option value="ko">KO</option>
-            <option value="zh">ZH</option>
-            <option value="ru">RU</option>
-            <option value="ar">AR</option>
+          <select class="lang-select" id="langSelect" title="Language">
+            <option value="en">EN</option><option value="es">ES</option>
+            <option value="fr">FR</option><option value="de">DE</option>
+            <option value="it">IT</option><option value="pt">PT</option>
+            <option value="nl">NL</option><option value="ja">JA</option>
+            <option value="ko">KO</option><option value="zh">ZH</option>
+            <option value="ru">RU</option><option value="ar">AR</option>
             <option value="hi">HI</option>
           </select>
         </div>
       </div>
 
-      <!-- Transcript area -->
-      <div class="transcript-area" id="transcriptArea">
-        <div class="transcript-empty" id="emptyState">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" y1="19" x2="12" y2="22"/>
-          </svg>
-          <p>Tap the record button to start capturing audio. Your speech will be transcribed and ready to copy.</p>
-        </div>
-      </div>
+      <!-- Transcript cards -->
+      <div class="transcript-area" id="transcriptArea"></div>
 
-      <!-- Bottom bar -->
-      <div class="bottom-bar" id="bottomBar">
+      <!-- Bottom toolbar: word count + copy/clear -->
+      <div class="bottom-bar">
         <div class="word-count" id="wordCount">0 words</div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-outline btn-sm" onclick="copyAllText()" id="copyAllBtn" style="display:none;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="copyAllText()" id="copyAllBtn" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
             Copy All
           </button>
-          <button class="btn btn-outline btn-sm" onclick="clearTranscripts()" id="clearBtn" style="display:none;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <button class="btn btn-outline btn-sm" onclick="clearTranscripts()" id="clearBtn" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
             Clear
           </button>
         </div>
       </div>
-    </div>
-  </div>
-</div>
 
-<!-- Settings Modal -->
+    </div><!-- /.main -->
+  </div><!-- /.layout -->
+</div><!-- /#app -->
+
+<!-- Settings modal -->
 <div class="modal-overlay" id="settingsModal">
   <div class="modal">
     <h2>Settings</h2>
     <div class="field">
       <label>OpenAI API Key</label>
       <input type="password" id="apiKeyInput" placeholder="sk-..." autocomplete="off">
-      <div class="hint">Your key is stored locally in this browser and never sent anywhere except OpenAI's API for transcription.</div>
+      <div class="hint">Stored locally in this browser. Only sent to OpenAI for transcription.</div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="hideSettings()">Cancel</button>
@@ -713,195 +1018,614 @@ html, body {
   </div>
 </div>
 
-<!-- Toast -->
+<!-- Toast notification -->
 <div class="toast" id="toast"></div>
 
-<script>
-// ── State ──
-let conversations = {};      // { id: { name, created, transcripts: [{time, text}] } }
-let activeId = null;
-let mediaRecorder = null;
-let audioChunks = [];
-let isRecording = false;
-let recordStartTime = null;
-let timerInterval = null;
-let isProcessing = false;
 
-// ── Init ──
+<!-- =================================================================
+     JAVASCRIPT
+     ================================================================= -->
+<script>
+/* =====================================================================
+   APPLICATION STATE
+
+   Data model:
+     groups        — { [groupId]: { name, created } }
+     conversations — { [convId]:  { name, created, updated, groupId, transcripts } }
+     openGroupId   — The one group whose children are visible (accordion)
+     activeId      — The conversation currently shown in the main panel
+
+   Invariants:
+     - Every conversation has a non-null groupId pointing to a valid group.
+     - Exactly one group is "open" at any time (openGroupId).
+     - New conversations are always created inside the open group.
+   ===================================================================== */
+
+let groups        = {};          // Group definitions
+let conversations = {};          // Conversation definitions
+let openGroupId   = null;        // Which group is expanded (accordion — only one)
+let activeId      = null;        // Which conversation is selected
+
+let manageMode    = false;       // Sidebar manage mode toggle
+let selected      = new Set();   // Conversation IDs selected in manage mode
+let expandedBlocks = new Set();  // Transcript block indices currently expanded
+
+/* -- Recording state -- */
+let mediaRecorder  = null;
+let audioChunks    = [];
+let isRecording    = false;
+let recordStartTime = null;
+let timerInterval  = null;
+let isProcessing   = false;
+
+
+/* =====================================================================
+   INITIALIZATION
+   ===================================================================== */
+
 document.addEventListener('DOMContentLoaded', () => {
-  loadConversations();
+  migrate();
+  loadData();
+  ensureDefaults();
   renderSidebar();
 
-  const keys = Object.keys(conversations);
-  if (keys.length > 0) {
-    // Select most recent
-    const sorted = keys.sort((a, b) => (conversations[b].updated || conversations[b].created) - (conversations[a].updated || conversations[a].created));
-    selectConversation(sorted[0]);
+  // Select the most recent conversation on load
+  const convs = Object.entries(conversations)
+    .sort((a, b) => (b[1].updated || b[1].created) - (a[1].updated || a[1].created));
+
+  if (convs.length) {
+    // Open the group that contains the most recent conversation
+    openGroupId = convs[0][1].groupId;
+    selectConversation(convs[0][0]);
+  } else {
+    renderTranscripts();
   }
 
-  if (!getApiKey()) {
-    setTimeout(showSettings, 400);
-  }
+  // Prompt for API key on first visit
+  if (!getApiKey()) setTimeout(showSettings, 400);
 });
 
-// ── Storage ──
-function loadConversations() {
+
+/* =====================================================================
+   PERSISTENCE — localStorage read/write
+   ===================================================================== */
+
+const STORAGE_KEYS = {
+  groups:      'vb_groups',
+  convs:       'vb_convs',
+  openGroup:   'vb_open_group',
+  apiKey:      'voicebox_api_key',
+};
+
+/** Load all data from localStorage. */
+function loadData() {
   try {
-    const raw = localStorage.getItem('voicebox_conversations');
-    conversations = raw ? JSON.parse(raw) : {};
-  } catch { conversations = {}; }
+    groups        = JSON.parse(localStorage.getItem(STORAGE_KEYS.groups) || '{}');
+    conversations = JSON.parse(localStorage.getItem(STORAGE_KEYS.convs)  || '{}');
+    openGroupId   = localStorage.getItem(STORAGE_KEYS.openGroup) || null;
+  } catch {
+    groups = {};
+    conversations = {};
+    openGroupId = null;
+  }
 }
 
-function saveConversationsToStorage() {
-  localStorage.setItem('voicebox_conversations', JSON.stringify(conversations));
+/** Write all data to localStorage. */
+function saveData() {
+  localStorage.setItem(STORAGE_KEYS.groups,    JSON.stringify(groups));
+  localStorage.setItem(STORAGE_KEYS.convs,     JSON.stringify(conversations));
+  localStorage.setItem(STORAGE_KEYS.openGroup, openGroupId || '');
 }
 
-function getApiKey() {
-  return localStorage.getItem('voicebox_api_key') || '';
+function getApiKey()  { return localStorage.getItem(STORAGE_KEYS.apiKey) || ''; }
+function setApiKey(k) { localStorage.setItem(STORAGE_KEYS.apiKey, k.trim()); }
+
+/**
+ * Ensure at least one group and one conversation exist.
+ * Called on every load so the app is never in an empty state.
+ */
+function ensureDefaults() {
+  // If no groups exist, create one
+  if (Object.keys(groups).length === 0) {
+    const gid = 'grp_' + Date.now();
+    groups[gid] = { name: 'My Recordings', created: Date.now() };
+    openGroupId = gid;
+  }
+
+  // If no conversations exist, create one in the first group
+  if (Object.keys(conversations).length === 0) {
+    const gid = openGroupId || Object.keys(groups)[0];
+    const cid = 'conv_' + Date.now();
+    const name = 'Recording ' + new Date().toLocaleString('en-US', {
+      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    });
+    conversations[cid] = {
+      name,
+      created: Date.now(),
+      updated: Date.now(),
+      groupId: gid,
+      transcripts: [],
+    };
+    activeId = cid;
+  }
+
+  // Make sure openGroupId points to a valid group
+  if (!openGroupId || !groups[openGroupId]) {
+    openGroupId = Object.keys(groups)[0];
+  }
+
+  // Orphan check: move any conversation whose group was deleted
+  const validGroups = new Set(Object.keys(groups));
+  for (const [cid, conv] of Object.entries(conversations)) {
+    if (!validGroups.has(conv.groupId)) {
+      conv.groupId = openGroupId;
+    }
+  }
+
+  saveData();
 }
 
-function setApiKey(key) {
-  localStorage.setItem('voicebox_api_key', key.trim());
-}
 
-// ── Sidebar ──
+/* =====================================================================
+   SIDEBAR RENDERING
+   ===================================================================== */
+
+/** Full re-render of the sidebar group/conversation list. */
 function renderSidebar() {
   const list = document.getElementById('sidebarList');
+  const allConvs = Object.entries(conversations);
 
-  const keys = Object.keys(conversations);
-  if (keys.length === 0) {
-    list.innerHTML = '<div class="sidebar-empty">No conversations yet.<br>Tap "New" to get started.</div>';
+  // Build group entries sorted by most recent conversation activity
+  const groupEntries = Object.entries(groups).map(([gid, g]) => {
+    const gConvs = allConvs
+      .filter(([, c]) => c.groupId === gid)
+      .sort((a, b) => (b[1].updated || b[1].created) - (a[1].updated || a[1].created));
+    const maxTime = gConvs.reduce((m, [, c]) => Math.max(m, c.updated || c.created), 0);
+    return { gid, group: g, convs: gConvs, maxTime };
+  }).sort((a, b) => b.maxTime - a.maxTime);
+
+  let html = '';
+
+  for (const { gid, group, convs } of groupEntries) {
+    const isOpen = gid === openGroupId;
+
+    html += `
+    <div class="sidebar-group" data-gid="${gid}">
+      <div class="sidebar-group-header ${isOpen ? 'active-group' : ''}"
+           onclick="setOpenGroup('${gid}')">
+        <svg class="chevron ${isOpen ? 'open' : ''}"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <span class="group-name" id="gname-${gid}">${esc(group.name)}</span>
+        <span class="group-count">${convs.length}</span>
+        <span class="group-delete"
+              onclick="event.stopPropagation(); deleteGroup('${gid}')"
+              title="Delete group">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </span>
+      </div>
+      <div class="sidebar-group-children ${isOpen ? '' : 'collapsed'}"
+           style="max-height:${isOpen ? convs.length * 52 + 8 : 0}px"
+           id="gc-${gid}">
+        ${convs.map(([id, c]) => renderConvItem(id, c)).join('')}
+      </div>
+    </div>`;
+  }
+
+  list.innerHTML = html;
+
+  // Attach double-click rename handlers
+  attachRenameHandlers(list);
+
+  // Update manage toolbar state
+  updateManageToolbar();
+}
+
+/** Render a single conversation item for the sidebar. */
+function renderConvItem(id, conv) {
+  const isActive = (id === activeId) && !manageMode;
+  const isSel = selected.has(id);
+  const date = new Date(conv.updated || conv.created);
+  const checkSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="20 6 9 17 4 12"/></svg>`;
+
+  return `
+  <div class="sidebar-item ${isActive ? 'active' : ''}"
+       data-id="${id}"
+       onclick="onItemClick('${id}')">
+    <div class="item-checkbox ${isSel ? 'checked' : ''}">${isSel ? checkSvg : ''}</div>
+    <span class="item-name">${esc(conv.name)}</span>
+    <span class="item-date">${formatRelativeDate(date)}</span>
+    <span class="item-delete"
+          onclick="event.stopPropagation(); deleteConversation('${id}')"
+          title="Delete">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </span>
+  </div>`;
+}
+
+/** Attach double-click rename to conversations and groups. */
+function attachRenameHandlers(list) {
+  list.querySelectorAll('.sidebar-item[data-id]').forEach(el => {
+    el.addEventListener('dblclick', e => {
+      e.stopPropagation();
+      if (!manageMode) startRenameConversation(el.dataset.id);
+    });
+  });
+
+  list.querySelectorAll('.sidebar-group-header').forEach(el => {
+    const gid = el.closest('.sidebar-group').dataset.gid;
+    el.addEventListener('dblclick', e => {
+      e.stopPropagation();
+      startRenameGroup(gid);
+    });
+  });
+}
+
+/** Handle clicking a conversation in the sidebar. */
+function onItemClick(id) {
+  if (manageMode) {
+    // Toggle selection
+    selected.has(id) ? selected.delete(id) : selected.add(id);
+    renderSidebar();
+  } else {
+    selectConversation(id);
+    closeSidebarMobile();
+  }
+}
+
+
+/* =====================================================================
+   GROUP MANAGEMENT
+   ===================================================================== */
+
+/**
+ * Set which group is open (accordion behavior).
+ * Clicking the already-open group does NOT close it — there's always one open.
+ * Clicking a different group switches the open group.
+ */
+function setOpenGroup(gid) {
+  if (gid === openGroupId) return; // Already open, do nothing
+  openGroupId = gid;
+  saveData();
+  renderSidebar();
+}
+
+/** Prompt the user for a name and create a new group. */
+function createGroup() {
+  const name = prompt('Group name:');
+  if (!name?.trim()) return;
+
+  const gid = 'grp_' + Date.now();
+  groups[gid] = { name: name.trim(), created: Date.now() };
+
+  // Open the newly created group
+  openGroupId = gid;
+  saveData();
+  renderSidebar();
+  toast('Group created');
+}
+
+/** Delete a group and all its conversations. */
+function deleteGroup(gid) {
+  // Prevent deleting the last group
+  if (Object.keys(groups).length <= 1) {
+    toast("Can't delete the only group");
     return;
   }
 
-  const sorted = keys.sort((a, b) => (conversations[b].updated || conversations[b].created) - (conversations[a].updated || conversations[a].created));
+  const groupConvs = Object.entries(conversations).filter(([, c]) => c.groupId === gid);
+  const msg = groupConvs.length
+    ? `Delete "${groups[gid].name}" and its ${groupConvs.length} conversation(s)?`
+    : `Delete empty group "${groups[gid].name}"?`;
 
-  list.innerHTML = sorted.map(id => {
-    const c = conversations[id];
-    const isActive = id === activeId;
-    const date = new Date(c.updated || c.created);
-    const dateStr = formatDate(date);
-    const wordCount = getConversationWordCount(id);
-    return `
-      <div class="sidebar-item ${isActive ? 'active' : ''}" onclick="selectConversation('${id}')" data-id="${id}">
-        <span class="item-name">${escapeHtml(c.name)}</span>
-        <span class="item-date">${dateStr}</span>
-        <span class="item-delete" onclick="event.stopPropagation();deleteConversation('${id}')" title="Delete">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </span>
-      </div>`;
-  }).join('');
+  if (!confirm(msg)) return;
+
+  // Delete all conversations in the group
+  for (const [id] of groupConvs) {
+    delete conversations[id];
+    if (activeId === id) activeId = null;
+  }
+
+  delete groups[gid];
+
+  // If the deleted group was the open one, switch to the first remaining group
+  if (openGroupId === gid) {
+    openGroupId = Object.keys(groups)[0];
+  }
+
+  saveData();
+  renderSidebar();
+  renderTranscripts();
+  toast('Group deleted');
 }
 
-function formatDate(d) {
-  const now = new Date();
-  const diff = now - d;
-  if (diff < 60000) return 'now';
-  if (diff < 3600000) return Math.floor(diff/60000) + 'm';
-  if (diff < 86400000) return Math.floor(diff/3600000) + 'h';
-  if (diff < 604800000) return Math.floor(diff/86400000) + 'd';
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+/** Turn a group name into an inline input for editing. */
+function startRenameGroup(gid) {
+  const el = document.getElementById('gname-' + gid);
+  if (!el) return;
+
+  const current = groups[gid].name;
+  el.innerHTML = `<input class="rename-input-group" value="${esc(current)}" onclick="event.stopPropagation()" />`;
+
+  const inp = el.querySelector('input');
+  inp.focus();
+  inp.select();
+
+  const finish = () => {
+    const val = inp.value.trim();
+    if (val && val !== current) {
+      groups[gid].name = val;
+      saveData();
+    }
+    renderSidebar();
+  };
+
+  inp.addEventListener('blur', finish);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') inp.blur();
+    if (e.key === 'Escape') { inp.value = current; inp.blur(); }
+  });
 }
 
-// ── Conversations ──
+
+/* =====================================================================
+   CONVERSATION MANAGEMENT
+   ===================================================================== */
+
+/** Create a new conversation in the currently open group. */
 function newConversation() {
   const id = 'conv_' + Date.now();
-  const name = 'Recording ' + new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-  conversations[id] = { name, created: Date.now(), updated: Date.now(), transcripts: [] };
-  saveConversationsToStorage();
+  const name = 'Recording ' + new Date().toLocaleString('en-US', {
+    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+  });
+
+  conversations[id] = {
+    name,
+    created: Date.now(),
+    updated: Date.now(),
+    groupId: openGroupId,
+    transcripts: [],
+  };
+
+  saveData();
   selectConversation(id);
   renderSidebar();
   closeSidebarMobile();
 }
 
+/** Select a conversation and show its transcripts. */
 function selectConversation(id) {
   activeId = id;
+  expandedBlocks.clear();
+
+  // Make sure the conversation's group is the open one
+  const conv = conversations[id];
+  if (conv && conv.groupId !== openGroupId) {
+    openGroupId = conv.groupId;
+    saveData();
+  }
+
   renderSidebar();
   renderTranscripts();
-  closeSidebarMobile();
 }
 
+/** Delete a single conversation. */
 function deleteConversation(id) {
-  if (!confirm('Delete this conversation?')) return;
+  // if (!confirm('Delete this conversation?')) return;
+
   delete conversations[id];
-  saveConversationsToStorage();
   if (activeId === id) {
     activeId = null;
     renderTranscripts();
   }
+
+  saveData();
   renderSidebar();
 }
 
-function renameConversation(id) {
-  const newName = prompt('Rename conversation:', conversations[id].name);
-  if (newName && newName.trim()) {
-    conversations[id].name = newName.trim();
-    saveConversationsToStorage();
+/** Turn a conversation name into an inline input for editing. */
+function startRenameConversation(id) {
+  const item = document.querySelector(`.sidebar-item[data-id="${id}"]`);
+  if (!item) return;
+
+  const nameEl = item.querySelector('.item-name');
+  const current = conversations[id].name;
+  nameEl.innerHTML = `<input class="rename-input" value="${esc(current)}" />`;
+
+  const inp = nameEl.querySelector('input');
+  inp.focus();
+  inp.select();
+  inp.addEventListener('click', e => e.stopPropagation());
+
+  const finish = () => {
+    const val = inp.value.trim();
+    if (val && val !== current) {
+      conversations[id].name = val;
+      conversations[id].updated = Date.now();
+      saveData();
+    }
     renderSidebar();
+  };
+
+  inp.addEventListener('blur', finish);
+  inp.addEventListener('keydown', e => {
+    e.stopPropagation();
+    if (e.key === 'Enter') inp.blur();
+    if (e.key === 'Escape') { inp.value = current; inp.blur(); }
+  });
+}
+
+
+/* =====================================================================
+   MANAGE MODE — Bulk select, move, delete
+   ===================================================================== */
+
+function toggleManageMode() {
+  manageMode = !manageMode;
+  selected.clear();
+  document.getElementById('sidebar').classList.toggle('manage-mode', manageMode);
+  document.getElementById('manageBtn').style.color = manageMode ? 'var(--accent)' : '';
+  renderSidebar();
+}
+
+/** Refresh the manage toolbar state: selection count and move-target dropdown. */
+function updateManageToolbar() {
+  const toolbar = document.getElementById('manageToolbar');
+  toolbar.classList.toggle('visible', manageMode);
+
+  document.getElementById('selCount').textContent = selected.size + ' selected';
+
+  // Populate move dropdown with all groups
+  const sel = document.getElementById('moveTarget');
+  sel.innerHTML = '<option value="">Move to…</option>';
+  for (const [gid, g] of Object.entries(groups)) {
+    sel.innerHTML += `<option value="${gid}">${esc(g.name)}</option>`;
   }
 }
 
-// ── Transcripts ──
+function selectAllConversations() {
+  selected = new Set(Object.keys(conversations));
+  renderSidebar();
+}
+
+function clearSelection() {
+  selected.clear();
+  renderSidebar();
+}
+
+/** Move all selected conversations to the chosen group. */
+function moveSelected() {
+  const target = document.getElementById('moveTarget').value;
+  if (!target)        { toast('Pick a destination'); return; }
+  if (!selected.size) { toast('Nothing selected');   return; }
+
+  for (const id of selected) {
+    if (conversations[id]) conversations[id].groupId = target;
+  }
+
+  saveData();
+  selected.clear();
+  renderSidebar();
+  toast('Moved');
+}
+
+/** Delete all selected conversations. */
+function deleteSelected() {
+  if (!selected.size) return;
+  if (!confirm(`Delete ${selected.size} conversation(s)?`)) return;
+
+  for (const id of selected) {
+    delete conversations[id];
+    if (activeId === id) activeId = null;
+  }
+
+  saveData();
+  selected.clear();
+  renderSidebar();
+  renderTranscripts();
+  toast('Deleted');
+}
+
+
+/* =====================================================================
+   TRANSCRIPT RENDERING — Newest-first, collapsed by default
+   ===================================================================== */
+
 function renderTranscripts() {
-  const area = document.getElementById('transcriptArea');
-  const empty = document.getElementById('emptyState');
+  const area    = document.getElementById('transcriptArea');
   const copyBtn = document.getElementById('copyAllBtn');
   const clearBtn = document.getElementById('clearBtn');
 
+  // No active conversation
   if (!activeId || !conversations[activeId]) {
-    area.innerHTML = empty.outerHTML;
+    area.innerHTML = emptyStateHtml();
     copyBtn.style.display = 'none';
     clearBtn.style.display = 'none';
     updateWordCount();
     return;
   }
 
-  const t = conversations[activeId].transcripts;
-  if (t.length === 0) {
-    area.innerHTML = `<div class="transcript-empty">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-        <line x1="12" y1="19" x2="12" y2="22"/>
-      </svg>
-      <p>Tap the record button to start capturing audio. Your speech will be transcribed and ready to copy.</p>
-    </div>`;
+  const transcripts = conversations[activeId].transcripts;
+
+  // Conversation has no transcripts yet
+  if (!transcripts.length) {
+    area.innerHTML = emptyStateHtml();
     copyBtn.style.display = 'none';
     clearBtn.style.display = 'none';
     updateWordCount();
     return;
   }
 
-  copyBtn.style.display = '';
+  copyBtn.style.display  = '';
   clearBtn.style.display = '';
 
   let html = '';
+
+  // Show processing indicator while transcribing
   if (isProcessing) {
     html += '<div class="processing-overlay"><div class="spinner"></div>Transcribing audio…</div>';
   }
 
-  t.forEach((entry, i) => {
+  // Render newest first (iterate backwards)
+  for (let i = transcripts.length - 1; i >= 0; i--) {
+    const entry = transcripts[i];
+    const isExpanded = expandedBlocks.has(i);
+    const preview = entry.text.length > 140
+      ? entry.text.slice(0, 140) + '…'
+      : entry.text;
+
     html += `
     <div class="transcript-block" data-index="${i}">
-      <div class="transcript-block-header">
-        <span class="transcript-block-time">${escapeHtml(entry.time)}</span>
-        <div class="transcript-block-actions">
-          <button class="btn btn-ghost btn-sm" onclick="copyBlock(${i})" title="Copy">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      <div class="transcript-block-header" onclick="toggleBlock(${i})">
+        <svg class="transcript-block-expand ${isExpanded ? 'expanded' : ''}"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <span class="transcript-block-preview">${esc(preview)}</span>
+        <span class="transcript-block-time">${esc(entry.time)}</span>
+        <div class="transcript-block-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-ghost btn-xs" onclick="copyBlock(${i})" title="Copy">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
           </button>
-          <button class="btn btn-ghost btn-sm" onclick="deleteBlock(${i})" title="Delete">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <button class="btn btn-ghost btn-xs" onclick="deleteBlock(${i})" title="Delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
           </button>
         </div>
       </div>
-      <textarea class="transcript-text" oninput="updateBlock(${i}, this)" rows="1">${escapeHtml(entry.text)}</textarea>
+      <div class="transcript-block-body ${isExpanded ? 'expanded' : ''}" id="tbody-${i}">
+        <div class="transcript-block-body-inner">
+          <textarea class="transcript-text"
+                    oninput="updateBlock(${i}, this)">${esc(entry.text)}</textarea>
+        </div>
+      </div>
     </div>`;
-  });
+  }
 
   area.innerHTML = html;
 
-  // Auto-resize textareas
-  area.querySelectorAll('.transcript-text').forEach(ta => {
+  // Auto-size any expanded textareas
+  area.querySelectorAll('.transcript-block-body.expanded .transcript-text').forEach(ta => {
     autoResize(ta);
     ta.addEventListener('input', () => autoResize(ta));
   });
@@ -909,132 +1633,166 @@ function renderTranscripts() {
   updateWordCount();
 }
 
-function autoResize(ta) {
-  ta.style.height = 'auto';
-  ta.style.height = ta.scrollHeight + 'px';
+/** The placeholder shown when there are no transcripts. */
+function emptyStateHtml() {
+  return `
+  <div class="transcript-empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+      <line x1="12" y1="19" x2="12" y2="22"/>
+    </svg>
+    <p>Tap the record button to start. Your speech will be transcribed and ready to copy.</p>
+  </div>`;
 }
 
+
+/* =====================================================================
+   TRANSCRIPT ACTIONS — Expand, edit, copy, delete
+   ===================================================================== */
+
+/** Toggle a transcript block between collapsed and expanded. */
+function toggleBlock(index) {
+  expandedBlocks.has(index) ? expandedBlocks.delete(index) : expandedBlocks.add(index);
+  renderTranscripts();
+}
+
+/** Resize a textarea to fit its content. */
+function autoResize(textarea) {
+  textarea.style.height = 'auto';
+  textarea.style.height = textarea.scrollHeight + 'px';
+}
+
+/** Save an edit to a transcript block. */
 function updateBlock(index, textarea) {
   if (!activeId) return;
   conversations[activeId].transcripts[index].text = textarea.value;
   conversations[activeId].updated = Date.now();
-  saveConversationsToStorage();
+  saveData();
   updateWordCount();
 }
 
+/** Remove a single transcript block. */
 function deleteBlock(index) {
   if (!activeId) return;
+
   conversations[activeId].transcripts.splice(index, 1);
   conversations[activeId].updated = Date.now();
-  saveConversationsToStorage();
+
+  // Remap expanded-block indices after removal
+  expandedBlocks.delete(index);
+  const remapped = new Set();
+  for (const i of expandedBlocks) {
+    remapped.add(i > index ? i - 1 : i);
+  }
+  expandedBlocks = remapped;
+
+  saveData();
   renderTranscripts();
 }
 
+/** Copy a single transcript block to the clipboard. */
 function copyBlock(index) {
   if (!activeId) return;
-  const text = conversations[activeId].transcripts[index].text;
-  copyToClipboard(text);
+  copyToClipboard(conversations[activeId].transcripts[index].text);
 }
 
+/** Copy all transcripts in the active conversation, joined by double newlines. */
 function copyAllText() {
   if (!activeId) return;
   const all = conversations[activeId].transcripts.map(t => t.text).join('\n\n');
   copyToClipboard(all);
 }
 
+/** Clear all transcripts in the active conversation. */
 function clearTranscripts() {
   if (!activeId) return;
-  if (!confirm('Clear all transcripts in this conversation?')) return;
+  if (!confirm('Clear all transcripts?')) return;
+
   conversations[activeId].transcripts = [];
   conversations[activeId].updated = Date.now();
-  saveConversationsToStorage();
+  expandedBlocks.clear();
+  saveData();
   renderTranscripts();
 }
 
-function getConversationWordCount(id) {
-  if (!conversations[id]) return 0;
-  return conversations[id].transcripts.reduce((sum, t) => sum + t.text.split(/\s+/).filter(Boolean).length, 0);
-}
-
+/** Update the word count display in the bottom bar. */
 function updateWordCount() {
   const el = document.getElementById('wordCount');
-  if (!activeId || !conversations[activeId]) { el.textContent = '0 words'; return; }
-  const count = getConversationWordCount(activeId);
+  if (!activeId || !conversations[activeId]) {
+    el.textContent = '0 words';
+    return;
+  }
+  const count = conversations[activeId].transcripts
+    .reduce((sum, t) => sum + t.text.split(/\s+/).filter(Boolean).length, 0);
   el.textContent = `${count.toLocaleString()} word${count !== 1 ? 's' : ''}`;
 }
 
-// ── Recording ──
+
+/* =====================================================================
+   AUDIO RECORDING
+   ===================================================================== */
+
 async function toggleRecording() {
-  if (isRecording) {
-    stopRecording();
-  } else {
-    await startRecording();
-  }
+  isRecording ? stopRecording() : await startRecording();
 }
 
 async function startRecording() {
   if (!getApiKey()) {
     showSettings();
-    toast('Please add your OpenAI API key first');
+    toast('Add your OpenAI API key first');
     return;
   }
 
-  // Auto-create conversation if none selected
-  if (!activeId) {
-    newConversation();
-  }
+  // Auto-create a conversation if none selected
+  if (!activeId) newConversation();
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    // Detect supported mimeType
+    // Pick the best supported audio format
     let mimeType = 'audio/webm;codecs=opus';
     if (!MediaRecorder.isTypeSupported(mimeType)) {
       mimeType = 'audio/mp4';
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = 'audio/wav';
-        if (!MediaRecorder.isTypeSupported(mimeType)) {
-          mimeType = ''; // let browser decide
-        }
-      }
+      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
     }
 
-    const options = mimeType ? { mimeType } : {};
-    mediaRecorder = new MediaRecorder(stream, options);
+    mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
     audioChunks = [];
 
-    mediaRecorder.ondataavailable = (e) => {
+    mediaRecorder.ondataavailable = e => {
       if (e.data.size > 0) audioChunks.push(e.data);
     };
 
     mediaRecorder.onstop = async () => {
       stream.getTracks().forEach(t => t.stop());
-      if (audioChunks.length > 0) {
-        const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      if (audioChunks.length) {
+        const blob = new Blob(audioChunks, {
+          type: mediaRecorder.mimeType || 'audio/webm'
+        });
         await transcribeAudio(blob);
       }
     };
 
-    mediaRecorder.start(1000); // Collect data every second
+    mediaRecorder.start(1000); // Collect chunks every second
     isRecording = true;
     recordStartTime = Date.now();
 
     document.getElementById('recordBtn').classList.add('recording');
     document.getElementById('recorderStatus').textContent = 'Recording…';
     document.getElementById('recorderStatus').classList.add('recording-active');
-
     timerInterval = setInterval(updateTimer, 200);
 
   } catch (err) {
     console.error('Microphone access error:', err);
-    toast('Could not access microphone. Please allow microphone permissions.');
+    toast('Could not access microphone.');
   }
 }
 
 function stopRecording() {
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
-  }
+  if (mediaRecorder?.state !== 'inactive') mediaRecorder.stop();
+
   isRecording = false;
   clearInterval(timerInterval);
 
@@ -1044,80 +1802,72 @@ function stopRecording() {
   document.getElementById('recorderTimer').textContent = '00:00';
 }
 
+/** Update the elapsed-time display while recording. */
 function updateTimer() {
   if (!recordStartTime) return;
-  const elapsed = Math.floor((Date.now() - recordStartTime) / 1000);
-  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
-  const s = String(elapsed % 60).padStart(2, '0');
-  document.getElementById('recorderTimer').textContent = `${m}:${s}`;
+  const seconds = Math.floor((Date.now() - recordStartTime) / 1000);
+  const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const ss = String(seconds % 60).padStart(2, '0');
+  document.getElementById('recorderTimer').textContent = `${mm}:${ss}`;
 }
 
-// ── Transcription ──
+
+/* =====================================================================
+   WHISPER TRANSCRIPTION — Send audio to OpenAI
+   ===================================================================== */
+
 async function transcribeAudio(blob) {
   isProcessing = true;
   renderTranscripts();
 
-  const apiKey = getApiKey();
-  const lang = document.getElementById('langSelect').value;
-
-  // Determine file extension from mime type
+  // Determine file extension from MIME type
   let ext = 'webm';
   if (blob.type.includes('mp4')) ext = 'mp4';
   else if (blob.type.includes('wav')) ext = 'wav';
-  else if (blob.type.includes('ogg')) ext = 'ogg';
 
   const formData = new FormData();
   formData.append('file', blob, `recording.${ext}`);
   formData.append('model', 'whisper-1');
-  formData.append('language', lang);
+  formData.append('language', document.getElementById('langSelect').value);
   formData.append('response_format', 'text');
 
   try {
-    const resp = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}` },
-      body: formData
+      headers: { 'Authorization': `Bearer ${getApiKey()}` },
+      body: formData,
     });
 
-    if (!resp.ok) {
-      const err = await resp.text();
-      console.error('Whisper API error:', err);
-      if (resp.status === 401) {
-        toast('Invalid API key. Check your settings.');
-      } else {
-        toast('Transcription failed. Check console for details.');
+    if (!response.ok) {
+      console.error('Whisper API error:', await response.text());
+      toast(response.status === 401 ? 'Invalid API key.' : 'Transcription failed.');
+    } else {
+      const text = (await response.text()).trim();
+      if (text && activeId) {
+        const time = new Date().toLocaleString('en-US', {
+          month: 'short', day: 'numeric',
+          hour: 'numeric', minute: '2-digit', second: '2-digit'
+        });
+        conversations[activeId].transcripts.push({ time, text });
+        conversations[activeId].updated = Date.now();
+        saveData();
+        renderSidebar();
       }
-      isProcessing = false;
-      renderTranscripts();
-      return;
     }
-
-    const text = (await resp.text()).trim();
-    if (text && activeId) {
-      const time = new Date().toLocaleString('en-US', {
-        month: 'short', day: 'numeric',
-        hour: 'numeric', minute: '2-digit', second: '2-digit'
-      });
-      conversations[activeId].transcripts.push({ time, text });
-      conversations[activeId].updated = Date.now();
-      saveConversationsToStorage();
-      renderSidebar();
-    }
-
   } catch (err) {
     console.error('Network error:', err);
-    toast('Network error. Check your connection.');
+    toast('Network error.');
   }
 
   isProcessing = false;
   renderTranscripts();
-
-  // Scroll to bottom
-  const area = document.getElementById('transcriptArea');
-  area.scrollTop = area.scrollHeight;
 }
 
-// ── Settings ──
+
+/* =====================================================================
+   SETTINGS MODAL
+   ===================================================================== */
+
 function showSettings() {
   document.getElementById('apiKeyInput').value = getApiKey();
   document.getElementById('settingsModal').classList.add('visible');
@@ -1128,48 +1878,59 @@ function hideSettings() {
 }
 
 function saveSettings() {
-  const key = document.getElementById('apiKeyInput').value;
-  setApiKey(key);
+  setApiKey(document.getElementById('apiKeyInput').value);
   hideSettings();
-  toast(key ? 'API key saved' : 'API key cleared');
+  toast('API key saved');
 }
 
-// Close settings on backdrop click
-document.getElementById('settingsModal').addEventListener('click', (e) => {
-  if (e.target === document.getElementById('settingsModal')) hideSettings();
+// Close modal on backdrop click
+document.getElementById('settingsModal').addEventListener('click', e => {
+  if (e.target.id === 'settingsModal') hideSettings();
 });
 
-// ── Sidebar mobile ──
+
+/* =====================================================================
+   MOBILE SIDEBAR TOGGLE
+   ===================================================================== */
+
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
   document.querySelector('.sidebar-backdrop').classList.toggle('visible');
 }
+
 function closeSidebarMobile() {
   document.getElementById('sidebar').classList.remove('open');
   document.querySelector('.sidebar-backdrop').classList.remove('visible');
 }
 
-// ── Clipboard ──
+
+/* =====================================================================
+   CLIPBOARD
+   ===================================================================== */
+
 async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
-    toast('Copied to clipboard');
+    toast('Copied');
   } catch {
-    // Fallback for iPad
+    // Fallback for older Safari / iPad
     const ta = document.createElement('textarea');
     ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.left = '-9999px';
+    ta.style.cssText = 'position:fixed;left:-9999px';
     document.body.appendChild(ta);
     ta.select();
     ta.setSelectionRange(0, ta.value.length);
     document.execCommand('copy');
     document.body.removeChild(ta);
-    toast('Copied to clipboard');
+    toast('Copied');
   }
 }
 
-// ── Toast ──
+
+/* =====================================================================
+   TOAST NOTIFICATION
+   ===================================================================== */
+
 function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -1178,21 +1939,99 @@ function toast(msg) {
   el._timeout = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
-// ── Helpers ──
-function escapeHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
+
+/* =====================================================================
+   UTILITY FUNCTIONS
+   ===================================================================== */
+
+/** HTML-escape a string to prevent XSS in template literals. */
+function esc(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
-// Keyboard shortcut: Space to toggle recording when not focused on input
-document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+/** Format a Date as a short relative string (e.g. "now", "3h", "2d", "Mar 5"). */
+function formatRelativeDate(date) {
+  const diff = Date.now() - date;
+  if (diff < 60_000)     return 'now';
+  if (diff < 3_600_000)  return Math.floor(diff / 60_000)    + 'm';
+  if (diff < 86_400_000) return Math.floor(diff / 3_600_000) + 'h';
+  if (diff < 604_800_000) return Math.floor(diff / 86_400_000) + 'd';
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+
+/* =====================================================================
+   KEYBOARD SHORTCUTS
+   ===================================================================== */
+
+document.addEventListener('keydown', e => {
+  // Don't capture when user is typing in an input
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+
+  // Space → toggle recording
   if (e.code === 'Space') {
     e.preventDefault();
     toggleRecording();
   }
 });
+
+
+/* =====================================================================
+   DATA MIGRATION — Upgrade from older storage formats
+   ===================================================================== */
+
+function migrate() {
+  // v1 → v2: Old format used 'voicebox_conversations' key with no groups.
+  const oldRaw = localStorage.getItem('voicebox_conversations');
+  if (!oldRaw) return;
+
+  try {
+    const oldConvs = JSON.parse(oldRaw);
+    const existing = JSON.parse(localStorage.getItem(STORAGE_KEYS.convs) || '{}');
+
+    // Only migrate if we have old data and no new data
+    if (Object.keys(oldConvs).length && !Object.keys(existing).length) {
+      // Create a default group for imported conversations
+      const gid = 'grp_migrated';
+      const newGroups = { [gid]: { name: 'Imported', created: Date.now() } };
+
+      // Assign every old conversation to the new group
+      for (const id of Object.keys(oldConvs)) {
+        oldConvs[id].groupId = gid;
+      }
+
+      localStorage.setItem(STORAGE_KEYS.groups, JSON.stringify(newGroups));
+      localStorage.setItem(STORAGE_KEYS.convs,  JSON.stringify(oldConvs));
+      localStorage.setItem(STORAGE_KEYS.openGroup, gid);
+    }
+
+    localStorage.removeItem('voicebox_conversations');
+  } catch {
+    // Migration failed silently — old data left intact
+  }
+
+  // v2 → v3: Move any ungrouped conversations into an "Ungrouped" group
+  try {
+    const convs = JSON.parse(localStorage.getItem(STORAGE_KEYS.convs) || '{}');
+    const grps  = JSON.parse(localStorage.getItem(STORAGE_KEYS.groups) || '{}');
+    const orphans = Object.entries(convs).filter(([, c]) => !c.groupId);
+
+    if (orphans.length) {
+      const gid = 'grp_ungrouped_' + Date.now();
+      grps[gid] = { name: 'General', created: Date.now() };
+      for (const [id] of orphans) convs[id].groupId = gid;
+      localStorage.setItem(STORAGE_KEYS.convs,  JSON.stringify(convs));
+      localStorage.setItem(STORAGE_KEYS.groups, JSON.stringify(grps));
+      if (!localStorage.getItem(STORAGE_KEYS.openGroup)) {
+        localStorage.setItem(STORAGE_KEYS.openGroup, gid);
+      }
+    }
+  } catch {
+    // Silent fail
+  }
+}
 </script>
 </body>
 </html>
